@@ -173,6 +173,9 @@
     // toggle toolbar on key select
     editor.addEventListener('keyup', toggle);
 
+    doc.addEventListener('mouseup', function(e){
+      that._menu.style.display = 'none';
+    });
     // toggle toolbar on key select
     menu.addEventListener('click', function(e) {
       var action = e.target.getAttribute('data-action');
