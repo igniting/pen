@@ -15,6 +15,8 @@
   #mode.disabled{color:#666;}
   #mode:before{content: '\e813';}
   #fork{position:fixed;right:0;top:0;}
+  .pen-menu .icon-event1:before {content: '1';}
+  .pen-menu .icon-event2:before {content: '2';}
   </style>
   <link rel="stylesheet" href="src/pen.css" />
 </head>
@@ -57,7 +59,17 @@
   // config
   var options = {
     editor: document.querySelector('[data-toggle="pen"]'),
-    debug: true
+    debug: true,
+    events : [
+      {
+        class: 'pen-icon icon-event1', 
+        name: 'event1'
+      },
+      {
+        class: 'pen-icon icon-event2',
+        name: 'event2'
+      }
+    ]
   };
 
   // create editor
@@ -75,6 +87,15 @@
       this.classList.add('disabled');
       pen.destroy();
     }
+  });
+  
+  // Event listeners
+  pen.config.editor.addEventListener('event1', function(e) {
+    console.log('Text from event1: ' + e.detail.toString());
+    });
+
+  pen.config.editor.addEventListener('event2', function(e) {
+    console.log('Text from event2: ' + e.detail.toString());
   });
 
 </script>
