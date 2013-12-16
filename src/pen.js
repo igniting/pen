@@ -259,7 +259,7 @@
   };
 
   Pen.prototype.actions = function() {
-    var that = this, reg, block, overall, insert;
+    var that = this, reg, block, overall, insert, callMyEvent;
 
     // allow command list
     reg = {
@@ -300,7 +300,7 @@
       return overall('formatblock', name);
     };
 
-    fireEvent = function(name) {
+    callMyEvent = function(name) {
       var eventName = name.split('-')[1];
       var event = new CustomEvent(eventName, {'detail': document.getSelection()});
       that.config.editor.dispatchEvent(event);
@@ -308,7 +308,7 @@
 
     this._actions = function(name, value) {
       if(name.match(reg.event)) {
-        fireEvent(name);
+        callMyEvent(name);
       }
       else if(name.match(reg.block)) {
         block(name);
