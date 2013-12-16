@@ -134,6 +134,12 @@
       if((name === 'createlink')) icons += '<input class="pen-input" placeholder="http://" />';
     }
 
+    if(this.config.events) {
+      for(var i = 0, events = this.config.events; i < events.length; i++) {
+        icons += '<i class="' + events[i].class + '" data-action="event-' + events[i].name + '"></i>';
+      }
+    }
+
     var menu = doc.createElement('div');
     menu.setAttribute('class', this.config.class + '-menu pen-menu');
     menu.innerHTML = icons;
@@ -260,6 +266,7 @@
 
     // allow command list
     reg = {
+      event: /^(?:event-)/,
       block: /^(?:p|h[1-6]|blockquote|pre)$/,
       inline: /^(?:bold|italic|underline|insertorderedlist|insertunorderedlist|indent|outdent)$/,
       source: /^(?:insertimage|createlink|unlink)$/,
@@ -296,8 +303,17 @@
       return overall('formatblock', name);
     };
 
+    fireEvent = function(name) {
+      var eventName = name.split('-')[1];
+      var event = new CustomEvent(eventName, {'detail': document.getSelection()});
+      that.config.editor.dispatchEvent(event);
+    };
+
     this._actions = function(name, value) {
-      if(name.match(reg.block)) {
+      if(name.match(reg.event)) {
+        fireEvent(name);
+      }
+      else if(name.match(reg.block)) {
         block(name);
       } else if(name.match(reg.inline) || name.match(reg.source)) {
         overall(name, value);
