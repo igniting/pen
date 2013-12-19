@@ -62,11 +62,11 @@
     debug: true,
     events : [
       {
-        class: 'pen-icon icon-event1', 
+        className: 'pen-icon icon-event1', 
         name: 'event1'
       },
       {
-        class: 'pen-icon icon-event2',
+        className: 'pen-icon icon-event2',
         name: 'event2'
       }
     ]
@@ -80,13 +80,8 @@
   document.querySelector('#mode').addEventListener('click', function() {
     var text = this.textContent;
 
-    if(this.classList.contains('disabled')) {
-      this.classList.remove('disabled');
-      pen.rebuild();
-    } else {
-      this.classList.add('disabled');
-      pen.destroy();
-    }
+    this.classList.add('disabled');
+    pen.destroy();
   });
   
   // Event listeners

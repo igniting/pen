@@ -78,7 +78,7 @@
     var editor = defaults.editor;
 
     // set default class
-    editor.classList.add(defaults.class);
+    editor.classList.add(defaults.className);
 
     // set contenteditable
     var editable = editor.getAttribute('contenteditable');
@@ -89,6 +89,8 @@
 
     // save the selection obj
     this._sel = doc.getSelection();
+
+    this._eventHandlers = [];
 
     // map actions
     this.actions();
@@ -136,12 +138,12 @@
 
     if(this.config.events) {
       for(var i = 0, events = this.config.events; i < events.length; i++) {
-        icons += '<i class="' + events[i].class + '" data-action="event-' + events[i].name + '"></i>';
+        icons += '<i class="' + events[i].className + '" data-action="event-' + events[i].name + '"></i>';
       }
     }
 
     var menu = doc.createElement('div');
-    menu.setAttribute('class', this.config.class + '-menu pen-menu');
+    menu.setAttribute('class', this.config.className + '-menu pen-menu');
     menu.innerHTML = icons;
     menu.style.display = 'none';
 
@@ -152,7 +154,9 @@
     };
 
     // change menu offset when window resize / scroll
+    that._eventHandlers.push({elem: window, event: 'resize', handler:setpos});
     window.addEventListener('resize', setpos);
+    that._eventHandlers.push({elem: window, event: 'scroll', handler:setpos});
     window.addEventListener('scroll', setpos);
 
     var editor = this.config.editor;
@@ -173,17 +177,21 @@
       }, 200);
     };
 
+    that._eventHandlers.push({elem: editor, event: 'mouseup', handler:toggle});
     // toggle toolbar on mouse select
     editor.addEventListener('mouseup', toggle);
 
+    that._eventHandlers.push({elem: editor, event: 'keyup', handler:toggle});
     // toggle toolbar on key select
     editor.addEventListener('keyup', toggle);
 
-    doc.addEventListener('mouseup', function(e){
+    var hideMenu = function(e){
       that._menu.style.display = 'none';
-    });
-    // toggle toolbar on key select
-    menu.addEventListener('click', function(e) {
+    }
+
+    that._eventHandlers.push({elem: doc, event: 'mouseup', handler:hideMenu});
+    doc.addEventListener('mouseup', hideMenu);
+    var clickHandler = function(e) {
       var action = e.target.getAttribute('data-action');
 
       if(!action) return;
@@ -216,7 +224,11 @@
       }
 
       apply();
-    });
+    };
+
+    that._eventHandlers.push({elem: menu, event: 'click', handler:clickHandler});
+    // toggle toolbar on key select
+    menu.addEventListener('click', clickHandler);
 
     return this;
   };
@@ -350,22 +362,23 @@
     });
   };
 
-  Pen.prototype.destroy = function(isAJoke) {
-    var destroy = isAJoke ? false : true
-      , attr = isAJoke ? 'setAttribute' : 'removeAttribute';
+  Pen.prototype.destroy = function() {
+    var destroy =  true, attr = 'removeAttribute';
 
-    if(!isAJoke) {
-      this._sel.removeAllRanges();
-      this._menu.style.display = 'none';
-    }
+    this._sel.removeAllRanges();
+    this._menu.style.display = 'none';
+
     this._isDestroyed = destroy;
     this.config.editor[attr]('contenteditable', '');
 
-    return this;
-  };
+    for (var z = 0; z < this._eventHandlers.length; z++) {
+      console.log('destroying handlers on elem:');
+      console.log(this._eventHandlers[z].elem);
+      this._eventHandlers[z].elem.removeEventListener(this._eventHandlers[z].event, this._eventHandlers[z].handler);
+    }
+    this._eventHandlers.length = 0;
 
-  Pen.prototype.rebuild = function() {
-    return this.destroy('it\'s a joke');
+    return this;
   };
 
   // a fallback for old browers
@@ -375,7 +388,7 @@
     var defaults = utils.merge(config)
       , klass = defaults.editor.getAttribute('class');
 
-    klass = klass ? klass.replace(/\bpen\b/g, '') + ' pen-textarea ' + defaults.class : 'pen pen-textarea';
+    klass = klass ? klass.replace(/\bpen\b/g, '') + ' pen-textarea ' + defaults.className : 'pen pen-textarea';
     defaults.editor.setAttribute('class', klass);
     defaults.editor.innerHTML = defaults.textarea;
     return defaults.editor;
