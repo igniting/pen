@@ -43,7 +43,7 @@
 
     // default settings
     var defaults = {
-      class: 'pen',
+      className: 'pen',
       debug: false,
       stay: config.stay || !config.debug,
       textarea: '<textarea name="content"></textarea>',
@@ -77,7 +77,7 @@
 
     var editor = defaults.editor;
 
-    // set default class
+    // set default className
     editor.classList.add(defaults.className);
 
     // set contenteditable
