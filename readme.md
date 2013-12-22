@@ -99,7 +99,7 @@ You can set `options.list` to an `Array`, add the following strings to make your
 
 By default, Pen will prevent unsafe page redirect when editing, to shut down it, specific `options.stay` to `false`.
 
-__NOTE:__ if `defautls.debug` is set to `true` and `default.stay` is not set: `defaults.stay == !defaults.debug`.
+__NOTE:__ if `defaults.debug` is set to `true` and `default.stay` is not set: `defaults.stay == !defaults.debug`.
 
 #### 2.6 Disable and Re-enable editor
 
@@ -109,12 +109,6 @@ You can disable the pen editor by call `destroy()` method of the `var pen = new 
 var pen = new Pen('#editor');
 
 pen.destroy(); // return itself
-```
-
-And, there's a corresponding method called `rebuild()` to re-enable the editor:
-
-```js
-pen.rebuild(); // return itself
 ```
 
 ## 3. markdown syntax support
