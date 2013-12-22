@@ -111,12 +111,6 @@ var pen = new Pen('#editor');
 pen.destroy(); // return itself
 ```
 
-And, there's a corresponding method called `rebuild()` to re-enable the editor:
-
-```js
-pen.rebuild(); // return itself
-```
-
 ## 3. markdown syntax support
 
 #### 3.1 install
