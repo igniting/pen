@@ -135,21 +135,21 @@ jQuery(document).ready(function($) {
     for(var i = 0, list = this.config.list; i < list.length; i++) {
       
       var name = list[i], klass = 'pen-icon icon-' + name;
-/*      var icon = document.createElement('i');
-      icon.setAttribute('class', klass);
-      icon.innerHTML = (name.match(/^h[1-6]|p$/i) ? name.toUpperCase() : '');
-*/
-      icons += '<i class="' + klass + '" data-action="' + name + '">' + (name.match(/^h[1-6]|p$/i) ? name.toUpperCase() : '') + '</i>';
-      if((name === 'createlink')) icons += '<input class="pen-input" placeholder="http://" />';
+      var HTML = (name.match(/^h[1-6]|p$/i) ? name.toUpperCase() : '');
+      var icon = $('<i></i>').addClass(klass).html('&#x032');
+      icon.bind('click',function(e){console.log(this);});
+      menu.appendChild(icon[0]);
+      //icons += '<i class="' + klass + '" data-action="' + name + '">' + (name.match(/^h[1-6]|p$/i) ? name.toUpperCase() : '') + '</i>';
+      //if((name === 'createlink')) icons += '<input class="pen-input" placeholder="http://" />';
     }
 
-    if(this.config.events) {
+/*    if(this.config.events) {
       for(var i = 0, events = this.config.events; i < events.length; i++) {
         icons += '<i class="' + events[i].className + '" data-action="event-' + events[i].name + '"></i>';
       }
-    }
+    }*/
 
-    menu.innerHTML = icons;
+    //menu.innerHTML = icons;
     menu.style.display = 'none';
 
     document.body.appendChild((this._menu = menu));
@@ -236,9 +236,9 @@ jQuery(document).ready(function($) {
       apply();
     };
 
-    that._eventHandlers.push({elem: menu, event: 'click', handler:clickHandler});
+    //that._eventHandlers.push({elem: menu, event: 'click', handler:clickHandler});
     // toggle toolbar on key select
-    menu.addEventListener('click', clickHandler);
+    //menu.addEventListener('click', clickHandler);
 
     return this;
   };
