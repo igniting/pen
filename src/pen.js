@@ -3,7 +3,33 @@
 jQuery(document).ready(function($) {
 
   var Pen, FakePen, utils = {};
-
+  var iconUnicode = {'location':'&#x\uf041',
+                'fit':'\uf066',
+                'bold':'\uf032',
+                'italic':'\uf033',
+                'justifyleft':'\uf036',
+                'justifycenter':'\uf037',
+                'justifyright':'\uf038',
+                'justifyfull':'\uf039',
+                'outdent':'\uf03b',
+                'indent':'\uf03c',
+                'mode':'\uf042',
+                'fullscreen':'\uf0b2',
+                'insertunorderedlist':'\uf0ca',
+                'insertorderedlist':'\uf0cb',
+                'strikethrough':'\uf0cc',
+                'underline':'\uf0cd',
+                'blockquote':'\uf10d',
+                'undo':'\uf0e2',
+                'pre':'\uf121',
+                'unlink':'\uf127',
+                'superscript':'\uf12b',
+                'subscript':'\uf12c',
+                'inserthorizontalrule':'\uf141',
+                'pin':'\uf0c6',
+                'createlink':'\uf0c1',
+                'keyword':'\uf084',
+                'property-name':'\uf044'}
   // type detect
   utils.is = function(obj, type) {
     return Object.prototype.toString.call(obj).slice(8, -1) === type;
@@ -132,15 +158,54 @@ jQuery(document).ready(function($) {
     var menu = document.createElement('div');
     menu.setAttribute('class', this.config.className + '-menu pen-menu');
 
+    var clickHandler = function(e) {
+      //console.log(e);
+      var action = e.target.getAttribute('data-action');
+      if(!action) return;
+
+      var apply = function(value) {
+        that._sel.removeAllRanges();
+        that._sel.addRange(that._range);
+        that._actions(action, value);
+        that._range = that._sel.getRangeAt(0);
+        that.highlight().nostyle().menu();
+      };
+
+      // create link
+      if(action === 'createlink') {
+        var input = menu.getElementsByTagName('input')[0], createlink;
+
+        input.style.display = 'block';
+        input.focus();
+
+        createlink = function(input) {
+          input.style.display = 'none';
+          if(input.value) return apply(input.value.replace(/(^\s+)|(\s+$)/g, '').replace(/^(?!http:\/\/|https:\/\/)(.*)$/, 'http://$1'));
+          action = 'unlink';
+          apply();
+        };
+
+        return input.onkeypress = function(e) {
+          if(e.which === 13) return createlink(e.target);
+        };
+      }
+
+      apply();
+    };
+
+
     for(var i = 0, list = this.config.list; i < list.length; i++) {
       
-      var name = list[i], klass = 'pen-icon icon-' + name;
+      var name = list[i];
       var HTML = (name.match(/^h[1-6]|p$/i) ? name.toUpperCase() : '');
-      var icon = $('<i></i>').addClass(klass).html('&#x032');
-      icon.bind('click',function(e){console.log(this);});
+      var icon = $('<i></i>').addClass('pen-icon '+name).attr('data-action',name);
+      if(HTML === '')
+        icon.html(iconUnicode[name]);
+      else
+        icon.html(HTML);
+      icon.bind('click',clickHandler);
       menu.appendChild(icon[0]);
-      //icons += '<i class="' + klass + '" data-action="' + name + '">' + (name.match(/^h[1-6]|p$/i) ? name.toUpperCase() : '') + '</i>';
-      //if((name === 'createlink')) icons += '<input class="pen-input" placeholder="http://" />';
+      that._eventHandlers.push({elem: icon, event: 'click', handler:clickHandler});
     }
 
 /*    if(this.config.events) {
@@ -196,45 +261,6 @@ jQuery(document).ready(function($) {
 
     that._eventHandlers.push({elem: document, event: 'mouseup', handler:hideMenu});
     document.addEventListener('mouseup', hideMenu);
-    var clickHandler = function(e) {
-      console.log(e);
-      try {
-        var action = e.target.getAttribute('data-action');
-      }
-      catch(e){
-        action = e.target.parentNode.getAttribute('data-action');
-      }
-      if(!action) return;
-
-      var apply = function(value) {
-        that._sel.removeAllRanges();
-        that._sel.addRange(that._range);
-        that._actions(action, value);
-        that._range = that._sel.getRangeAt(0);
-        that.highlight().nostyle().menu();
-      };
-
-      // create link
-      if(action === 'createlink') {
-        var input = menu.getElementsByTagName('input')[0], createlink;
-
-        input.style.display = 'block';
-        input.focus();
-
-        createlink = function(input) {
-          input.style.display = 'none';
-          if(input.value) return apply(input.value.replace(/(^\s+)|(\s+$)/g, '').replace(/^(?!http:\/\/|https:\/\/)(.*)$/, 'http://$1'));
-          action = 'unlink';
-          apply();
-        };
-
-        return input.onkeypress = function(e) {
-          if(e.which === 13) return createlink(e.target);
-        };
-      }
-
-      apply();
-    };
 
     //that._eventHandlers.push({elem: menu, event: 'click', handler:clickHandler});
     // toggle toolbar on key select
@@ -260,8 +286,8 @@ jQuery(document).ready(function($) {
     if (linkInput) linkInput.style.display = 'none';
 
     highlight = function(str) {
-      var selector = '.icon-' + str
-        , el = menu.querySelector(selector);
+      var selector = '.' + str
+      var el = menu.querySelector(selector);
       return el && el.classList.add('active');
     };
 
