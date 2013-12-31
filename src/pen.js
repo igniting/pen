@@ -159,10 +159,8 @@ jQuery(document).ready(function($) {
     menu.setAttribute('class', this.config.className + '-menu pen-menu');
 
     var clickHandler = function(e) {
-      //console.log(e);
       var action = e.target.getAttribute('data-action');
       if(!action) return;
-
       var apply = function(value) {
         that._sel.removeAllRanges();
         that._sel.addRange(that._range);
@@ -189,7 +187,8 @@ jQuery(document).ready(function($) {
           if(e.which === 13) return createlink(e.target);
         };
       }
-
+      e.preventDefault();
+      e.stopPropagation();
       apply();
     };
 
@@ -206,15 +205,22 @@ jQuery(document).ready(function($) {
       icon.bind('click',clickHandler);
       menu.appendChild(icon[0]);
       that._eventHandlers.push({elem: icon, event: 'click', handler:clickHandler});
+
+      if(name === 'createlink'){
+        var input = $('<input></input>').addClass('pen-input').attr('placeholder','http://');
+        menu.appendChild(input[0]);
+      }
     }
 
-/*    if(this.config.events) {
+    if(this.config.events) {
       for(var i = 0, events = this.config.events; i < events.length; i++) {
-        icons += '<i class="' + events[i].className + '" data-action="event-' + events[i].name + '"></i>';
+        var icon = $('<i></i>').addClass(events[i].className).attr('data-action','event-'+ events[i].name).html(events[i].content);
+        icon.bind('click',clickHandler);
+        menu.appendChild(icon[0]);
+        that._eventHandlers.push({elem: icon, event: 'click', handler:clickHandler});
       }
-    }*/
+    }
 
-    //menu.innerHTML = icons;
     menu.style.display = 'none';
 
     document.body.appendChild((this._menu = menu));
@@ -242,6 +248,7 @@ jQuery(document).ready(function($) {
           that.menu().highlight();
         } else {
           //hide menu
+          console.log('toggle called');
           that._menu.style.display = 'none';
         }
       }, 200);
@@ -250,21 +257,24 @@ jQuery(document).ready(function($) {
     that._eventHandlers.push({elem: editor, event: 'mouseup', handler:toggle});
     // toggle toolbar on mouse select
     editor.addEventListener('mouseup', toggle);
-
+    console.log(editor);
     that._eventHandlers.push({elem: editor, event: 'keyup', handler:toggle});
     // toggle toolbar on key select
     editor.addEventListener('keyup', toggle);
 
     var hideMenu = function(e){
-      that._menu.style.display = 'none';
+      console.log('hidemenu called');
+      console.log(e);
+      var klasses = $(e.target).attr('class');
+      var klassExists = -1;
+      if(typeOf(klasses) != 'undefined')
+        klassExists = klasses.split(' ').indexOf('pen-icon');
+      if( klassExists === -1)
+        that._menu.style.display = 'none';
     }
 
-    that._eventHandlers.push({elem: document, event: 'mouseup', handler:hideMenu});
-    document.addEventListener('mouseup', hideMenu);
-
-    //that._eventHandlers.push({elem: menu, event: 'click', handler:clickHandler});
-    // toggle toolbar on key select
-    //menu.addEventListener('click', clickHandler);
+    that._eventHandlers.push({elem: document, event: 'click', handler:hideMenu});
+    document.addEventListener('click', hideMenu);
 
     return this;
   };
