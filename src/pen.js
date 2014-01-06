@@ -166,7 +166,7 @@ jQuery(document).ready(function($) {
         that._sel.addRange(that._range);
         that._actions(action, value);
         that._range = that._sel.getRangeAt(0);
-        that.highlight().nostyle().menu();
+        that.highlight().menu();
       };
 
       // create link
@@ -197,14 +197,14 @@ jQuery(document).ready(function($) {
       
       var name = list[i];
       var HTML = (name.match(/^h[1-6]|p$/i) ? name.toUpperCase() : '');
-      var icon = $('<i></i>').addClass('pen-icon '+name).attr('data-action',name);
+      var icon = $('<div></div>').addClass('pen-icon '+name).attr('data-action',name);
       if(HTML === '')
         icon.html(iconUnicode[name]);
       else
         icon.html(HTML);
       icon.bind('click',clickHandler);
       menu.appendChild(icon[0]);
-      that._eventHandlers.push({elem: icon, event: 'click', handler:clickHandler});
+      that._eventHandlers.push({elem: icon[0], event: 'click', handler:clickHandler});
 
       if(name === 'createlink'){
         var input = $('<input></input>').addClass('pen-input').attr('placeholder','http://');
@@ -214,10 +214,24 @@ jQuery(document).ready(function($) {
 
     if(this.config.events) {
       for(var i = 0, events = this.config.events; i < events.length; i++) {
-        var icon = $('<i></i>').addClass(events[i].className).attr('data-action','event-'+ events[i].name).html(events[i].content);
-        icon.bind('click',clickHandler);
-        menu.appendChild(icon[0]);
-        that._eventHandlers.push({elem: icon, event: 'click', handler:clickHandler});
+        if(events[i].type === 'group'){
+          //var dropdown = $('<div></div>').addClass(events[i].className + ' dropdown').html('<i class="dropdown-toggle pen-icon" id="dropdownMenu1">' + events[i].content +'<b class="caret"></b></i>');
+          var dropdownMenu =   $('<div class="pen-dropdown aligntext"></div>').html('<span class="dropdown-icon">'+events[i].content+'</span><i style="font-size:10px">&nbsp;\uf0d7</i>');
+          for(var j=0; j < events[i].options.length; j++){
+            var option = events[i].options[j];
+            var icon = $('<div></div>').addClass('pen-dropdown-option').attr('data-action','event-'+ option.name).html(option.content);
+            icon.bind('click',clickHandler);
+            dropdownMenu.append(icon);
+            that._eventHandlers.push({elem: icon[0], event: 'click', handler:clickHandler});
+          }
+          menu.appendChild(dropdownMenu[0]);
+        }
+        else{
+          var icon = $('<div></div>').addClass(events[i].className).attr('data-action','event-'+ events[i].name).html(events[i].content);
+          icon.bind('click',clickHandler);
+          menu.appendChild(icon[0]);
+          that._eventHandlers.push({elem: icon[0], event: 'click', handler:clickHandler});
+        }
       }
     }
 
@@ -267,10 +281,12 @@ jQuery(document).ready(function($) {
       console.log(e);
       var klasses = $(e.target).attr('class');
       var klassExists = -1;
-      if(typeOf(klasses) != 'undefined')
+      if(typeof(klasses) != 'undefined')
         klassExists = klasses.split(' ').indexOf('pen-icon');
-      if( klassExists === -1)
+      if( klassExists === -1){
         that._menu.style.display = 'none';
+        console.log('menu hidden in hidemenu');
+      }
     }
 
     that._eventHandlers.push({elem: document, event: 'click', handler:hideMenu});
