@@ -160,6 +160,7 @@ jQuery(document).ready(function($) {
 
     var clickHandler = function(e) {
       var action = e.target.getAttribute('data-action');
+      var eventData = e.target.getAttribute('data-event');
       if(!action) return;
       var apply = function(value) {
         that._sel.removeAllRanges();
@@ -189,7 +190,7 @@ jQuery(document).ready(function($) {
       }
       e.preventDefault();
       e.stopPropagation();
-      apply();
+      apply(eventData);
     };
 
 
@@ -219,7 +220,7 @@ jQuery(document).ready(function($) {
           var dropdownMenu =   $('<div class="pen-dropdown aligntext"></div>').html('<span class="dropdown-icon">'+events[i].content+'</span><i style="font-size:10px">&nbsp;\uf0d7</i>');
           for(var j=0; j < events[i].options.length; j++){
             var option = events[i].options[j];
-            var icon = $('<div></div>').addClass('pen-dropdown-option').attr('data-action','event-'+ option.name).html(option.content);
+            var icon = $('<div></div>').addClass('pen-dropdown-option').attr('data-action','event-'+ option.name).attr('data-event',option.data).html(option.content);
             icon.bind('click',clickHandler);
             dropdownMenu.append(icon);
             that._eventHandlers.push({elem: icon[0], event: 'click', handler:clickHandler});
@@ -377,15 +378,20 @@ jQuery(document).ready(function($) {
       return overall('formatblock', name);
     };
 
-    callMyEvent = function(name) {
+    callMyEvent = function(name, eventData) {
       var eventName = name.split('-')[1];
-      var event = new CustomEvent(eventName, {'detail': document.getSelection()});
-      that.config.editor.dispatchEvent(event);
+      //var event = new CustomEvent(eventName, {'detail': document.getSelection()});
+      $(that.config.editor).trigger({
+        type: eventName,
+        range: that._sel.getRangeAt(0),
+        detail: eventData
+      });
+      //that.config.editor.dispatchEvent(event);
     };
 
     this._actions = function(name, value) {
       if(name.match(reg.event)) {
-        callMyEvent(name);
+        callMyEvent(name, value);
       }
       else if(name.match(reg.block)) {
         block(name);
