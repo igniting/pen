@@ -159,8 +159,8 @@ jQuery(document).ready(function($) {
     menu.setAttribute('class', this.config.className + '-menu pen-menu');
 
     var clickHandler = function(e) {
-      var action = e.target.getAttribute('data-action');
-      var eventData = e.target.getAttribute('data-event');
+      var action = e.data.action;
+      var eventData = e.data.eventData;
       if(!action) return;
       var apply = function(value) {
         that._sel.removeAllRanges();
@@ -198,12 +198,16 @@ jQuery(document).ready(function($) {
       
       var name = list[i];
       var HTML = (name.match(/^h[1-6]|p$/i) ? name.toUpperCase() : '');
-      var icon = $('<div></div>').addClass('pen-icon '+name).attr('data-action',name);
+      var icon = $('<div></div>').addClass('pen-icon '+name);
       if(HTML === '')
         icon.html(iconUnicode[name]);
       else
         icon.html(HTML);
-      icon.bind('click',clickHandler);
+      var data = {action: name,
+                  eventData:'none'
+          };
+
+      icon.on('click', data, clickHandler);
       menu.appendChild(icon[0]);
       that._eventHandlers.push({elem: icon[0], event: 'click', handler:clickHandler});
 
@@ -216,20 +220,29 @@ jQuery(document).ready(function($) {
     if(this.config.events) {
       for(var i = 0, events = this.config.events; i < events.length; i++) {
         if(events[i].type === 'group'){
-          //var dropdown = $('<div></div>').addClass(events[i].className + ' dropdown').html('<i class="dropdown-toggle pen-icon" id="dropdownMenu1">' + events[i].content +'<b class="caret"></b></i>');
-          var dropdownMenu =   $('<div class="pen-dropdown aligntext"></div>').html('<span class="dropdown-icon">'+events[i].content+'</span><i style="font-size:10px">&nbsp;\uf0d7</i>');
+          var dropdownMenu =  $('<div class="pen-dropdown"></div>').
+                                html('<span class="dropdown-icon">'+events[i].content+'</span><i style="font-size:10px">&nbsp;\uf0d7</i>');
+          var dropdownItems = $('<div class="pen-dropdown-items"></div>');
+          //TODO add event handler for mouseout so that dropdown satys for some time after mouseout
           for(var j=0; j < events[i].options.length; j++){
             var option = events[i].options[j];
-            var icon = $('<div></div>').addClass('pen-dropdown-option').attr('data-action','event-'+ option.name).attr('data-event',option.data).html(option.content);
-            icon.bind('click',clickHandler);
-            dropdownMenu.append(icon);
+            var icon = $('<div></div>').addClass('pen-dropdown-option').html(option.content);
+            var data = {action: 'event-'+ option.name,
+                        eventData:option.data
+                      };
+            icon.on('click',data, clickHandler);
+            dropdownItems.append(icon);
             that._eventHandlers.push({elem: icon[0], event: 'click', handler:clickHandler});
           }
+          dropdownMenu.append(dropdownItems);
           menu.appendChild(dropdownMenu[0]);
         }
         else{
-          var icon = $('<div></div>').addClass(events[i].className).attr('data-action','event-'+ events[i].name).html(events[i].content);
-          icon.bind('click',clickHandler);
+          var icon = $('<div></div>').addClass(events[i].className).html(events[i].content);
+          var data = {action: 'event-'+ option.name,
+                      eventData:'none'
+                      };
+          icon.on('click', data, clickHandler);
           menu.appendChild(icon[0]);
           that._eventHandlers.push({elem: icon[0], event: 'click', handler:clickHandler});
         }
