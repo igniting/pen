@@ -239,7 +239,7 @@ jQuery(document).ready(function($) {
         }
         else{
           var icon = $('<div></div>').addClass(events[i].className).html(events[i].content);
-          var data = {action: 'event-'+ option.name,
+          var data = {action: 'event-'+ events[i].name,
                       eventData:'none'
                       };
           icon.on('click', data, clickHandler);
