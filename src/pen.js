@@ -1,9 +1,35 @@
 /*! Licensed under MIT, https://github.com/sofish/pen */
 /* jshint -W030, -W093, -W015 */
-(function(doc) {
+jQuery(document).ready(function($) {
 
   var Pen, FakePen, utils = {};
-
+  var iconUnicode = {'location':'&#x\uf041',
+                'fit':'\uf066',
+                'bold':'\uf032',
+                'italic':'\uf033',
+                'justifyleft':'\uf036',
+                'justifycenter':'\uf037',
+                'justifyright':'\uf038',
+                'justifyfull':'\uf039',
+                'outdent':'\uf03b',
+                'indent':'\uf03c',
+                'mode':'\uf042',
+                'fullscreen':'\uf0b2',
+                'insertunorderedlist':'\uf0ca',
+                'insertorderedlist':'\uf0cb',
+                'strikethrough':'\uf0cc',
+                'underline':'\uf0cd',
+                'blockquote':'\uf10d',
+                'undo':'\uf0e2',
+                'pre':'\uf121',
+                'unlink':'\uf127',
+                'superscript':'\uf12b',
+                'subscript':'\uf12c',
+                'inserthorizontalrule':'\uf141',
+                'pin':'\uf0c6',
+                'createlink':'\uf0c1',
+                'keyword':'\uf084',
+                'property-name':'\uf044'}
   // type detect
   utils.is = function(obj, type) {
     return Object.prototype.toString.call(obj).slice(8, -1) === type;
@@ -43,7 +69,7 @@
 
     // default settings
     var defaults = {
-      class: 'pen',
+      className: 'pen',
       debug: false,
       stay: config.stay || !config.debug,
       textarea: '<textarea name="content"></textarea>',
@@ -77,8 +103,8 @@
 
     var editor = defaults.editor;
 
-    // set default class
-    editor.classList.add(defaults.class);
+    // set default className
+    editor.classList.add(defaults.className);
 
     // set contenteditable
     var editable = editor.getAttribute('contenteditable');
@@ -88,7 +114,9 @@
     this.config = defaults;
 
     // save the selection obj
-    this._sel = doc.getSelection();
+    this._sel = document.getSelection();
+
+    this._eventHandlers = [];
 
     // map actions
     this.actions();
@@ -127,64 +155,19 @@
   Pen.prototype.toolbar = function() {
 
     var that = this, icons = '';
+    var menu = document.createElement('div');
+    menu.setAttribute('class', this.config.className + '-menu pen-menu');
 
-    for(var i = 0, list = this.config.list; i < list.length; i++) {
-      var name = list[i], klass = 'pen-icon icon-' + name;
-      icons += '<i class="' + klass + '" data-action="' + name + '">' + (name.match(/^h[1-6]|p$/i) ? name.toUpperCase() : '') + '</i>';
-      if((name === 'createlink')) icons += '<input class="pen-input" placeholder="http://" />';
-    }
-
-    var menu = doc.createElement('div');
-    menu.setAttribute('class', this.config.class + '-menu pen-menu');
-    menu.innerHTML = icons;
-    menu.style.display = 'none';
-
-    doc.body.appendChild((this._menu = menu));
-
-    var setpos = function() {
-      if(menu.style.display === 'block') that.menu();
-    };
-
-    // change menu offset when window resize / scroll
-    window.addEventListener('resize', setpos);
-    window.addEventListener('scroll', setpos);
-
-    var editor = this.config.editor;
-    var toggle = function() {
-
-      if(that._isDestroyed) return;
-
-      utils.shift('toggle_menu', function() {
-        var range = that._sel;
-        if(!range.isCollapsed) {
-          //show menu
-          that._range = range.getRangeAt(0);
-          that.menu().highlight();
-        } else {
-          //hide menu
-          that._menu.style.display = 'none';
-        }
-      }, 200);
-    };
-
-    // toggle toolbar on mouse select
-    editor.addEventListener('mouseup', toggle);
-
-    // toggle toolbar on key select
-    editor.addEventListener('keyup', toggle);
-
-    // toggle toolbar on key select
-    menu.addEventListener('click', function(e) {
-      var action = e.target.getAttribute('data-action');
-
+    var clickHandler = function(e) {
+      var action = e.data.action;
+      var eventData = e.data.eventData;
       if(!action) return;
-
       var apply = function(value) {
         that._sel.removeAllRanges();
         that._sel.addRange(that._range);
         that._actions(action, value);
         that._range = that._sel.getRangeAt(0);
-        that.highlight().nostyle().menu();
+        that.highlight().menu();
       };
 
       // create link
@@ -205,9 +188,123 @@
           if(e.which === 13) return createlink(e.target);
         };
       }
+      e.preventDefault();
+      e.stopPropagation();
+      apply(eventData);
+    };
 
-      apply();
-    });
+
+    for(var i = 0, list = this.config.list; i < list.length; i++) {
+      
+      var name = list[i];
+      var HTML = (name.match(/^h[1-6]|p$/i) ? name.toUpperCase() : '');
+      var icon = $('<div></div>').addClass('pen-icon '+name);
+      if(HTML === '')
+        icon.html(iconUnicode[name]);
+      else
+        icon.html(HTML);
+      var data = {action: name,
+                  eventData:'none'
+          };
+
+      icon.on('click', data, clickHandler);
+      menu.appendChild(icon[0]);
+      that._eventHandlers.push({elem: icon[0], event: 'click', handler:clickHandler});
+
+      if(name === 'createlink'){
+        var input = $('<input></input>').addClass('pen-input').attr('placeholder','http://');
+        menu.appendChild(input[0]);
+      }
+    }
+
+    if(this.config.events) {
+      for(var i = 0, events = this.config.events; i < events.length; i++) {
+        if(events[i].type === 'group'){
+          var dropdownMenu =  $('<div class="pen-dropdown"></div>').
+                                html('<span class="dropdown-icon">'+events[i].content+'</span><i style="font-size:10px">&nbsp;\uf0d7</i>');
+          var dropdownItems = $('<div class="pen-dropdown-items"></div>');
+          //TODO add event handler for mouseout so that dropdown satys for some time after mouseout
+          for(var j=0; j < events[i].options.length; j++){
+            var option = events[i].options[j];
+            var icon = $('<div></div>').addClass('pen-dropdown-option').html(option.content);
+            var data = {action: 'event-'+ option.name,
+                        eventData:option.data
+                      };
+            icon.on('click',data, clickHandler);
+            dropdownItems.append(icon);
+            that._eventHandlers.push({elem: icon[0], event: 'click', handler:clickHandler});
+          }
+          dropdownMenu.append(dropdownItems);
+          menu.appendChild(dropdownMenu[0]);
+        }
+        else{
+          var icon = $('<div></div>').addClass(events[i].className).html(events[i].content);
+          var data = {action: 'event-'+ events[i].name,
+                      eventData:'none'
+                      };
+          icon.on('click', data, clickHandler);
+          menu.appendChild(icon[0]);
+          that._eventHandlers.push({elem: icon[0], event: 'click', handler:clickHandler});
+        }
+      }
+    }
+
+    menu.style.display = 'none';
+
+    document.body.appendChild((this._menu = menu));
+
+    var setpos = function() {
+      if(menu.style.display === 'block') that.menu();
+    };
+
+    // change menu offset when window resize / scroll
+    that._eventHandlers.push({elem: window, event: 'resize', handler:setpos});
+    window.addEventListener('resize', setpos);
+    that._eventHandlers.push({elem: window, event: 'scroll', handler:setpos});
+    window.addEventListener('scroll', setpos);
+
+    var editor = this.config.editor;
+    var toggle = function() {
+
+      if(that._isDestroyed) return;
+
+      utils.shift('toggle_menu', function() {
+        var range = that._sel;
+        if(!range.isCollapsed) {
+          //show menu
+          that._range = range.getRangeAt(0);
+          that.menu().highlight();
+        } else {
+          //hide menu
+          console.log('toggle called');
+          that._menu.style.display = 'none';
+        }
+      }, 200);
+    };
+
+    that._eventHandlers.push({elem: editor, event: 'mouseup', handler:toggle});
+    // toggle toolbar on mouse select
+    editor.addEventListener('mouseup', toggle);
+    console.log(editor);
+    that._eventHandlers.push({elem: editor, event: 'keyup', handler:toggle});
+    // toggle toolbar on key select
+    editor.addEventListener('keyup', toggle);
+
+    var hideMenu = function(e){
+      console.log('hidemenu called');
+      console.log(e);
+      var klasses = $(e.target).attr('class');
+      var klassExists = -1;
+      if(typeof(klasses) != 'undefined')
+        klassExists = klasses.split(' ').indexOf('pen-icon');
+      if( klassExists === -1){
+        that._menu.style.display = 'none';
+        console.log('menu hidden in hidemenu');
+      }
+    }
+
+    that._eventHandlers.push({elem: document, event: 'click', handler:hideMenu});
+    document.addEventListener('click', hideMenu);
 
     return this;
   };
@@ -229,8 +326,8 @@
     if (linkInput) linkInput.style.display = 'none';
 
     highlight = function(str) {
-      var selector = '.icon-' + str
-        , el = menu.querySelector(selector);
+      var selector = '.' + str
+      var el = menu.querySelector(selector);
       return el && el.classList.add('active');
     };
 
@@ -253,10 +350,11 @@
   };
 
   Pen.prototype.actions = function() {
-    var that = this, reg, block, overall, insert;
+    var that = this, reg, block, overall, insert, callMyEvent;
 
     // allow command list
     reg = {
+      event: /^(?:event-)/,
       block: /^(?:p|h[1-6]|blockquote|pre)$/,
       inline: /^(?:bold|italic|underline|insertorderedlist|insertunorderedlist|indent|outdent)$/,
       source: /^(?:insertimage|createlink|unlink)$/,
@@ -293,8 +391,22 @@
       return overall('formatblock', name);
     };
 
+    callMyEvent = function(name, eventData) {
+      var eventName = name.split('-')[1];
+      //var event = new CustomEvent(eventName, {'detail': document.getSelection()});
+      $(that.config.editor).trigger({
+        type: eventName,
+        range: that._sel.getRangeAt(0),
+        detail: eventData
+      });
+      //that.config.editor.dispatchEvent(event);
+    };
+
     this._actions = function(name, value) {
-      if(name.match(reg.block)) {
+      if(name.match(reg.event)) {
+        callMyEvent(name, value);
+      }
+      else if(name.match(reg.block)) {
         block(name);
       } else if(name.match(reg.inline) || name.match(reg.source)) {
         overall(name, value);
@@ -331,22 +443,23 @@
     });
   };
 
-  Pen.prototype.destroy = function(isAJoke) {
-    var destroy = isAJoke ? false : true
-      , attr = isAJoke ? 'setAttribute' : 'removeAttribute';
+  Pen.prototype.destroy = function() {
+    var destroy =  true, attr = 'removeAttribute';
 
-    if(!isAJoke) {
-      this._sel.removeAllRanges();
-      this._menu.style.display = 'none';
-    }
+    this._sel.removeAllRanges();
+    this._menu.style.display = 'none';
+
     this._isDestroyed = destroy;
     this.config.editor[attr]('contenteditable', '');
 
-    return this;
-  };
+    for (var z = 0; z < this._eventHandlers.length; z++) {
+      console.log('destroying handlers on elem:');
+      console.log(this._eventHandlers[z].elem);
+      this._eventHandlers[z].elem.removeEventListener(this._eventHandlers[z].event, this._eventHandlers[z].handler);
+    }
+    this._eventHandlers.length = 0;
 
-  Pen.prototype.rebuild = function() {
-    return this.destroy('it\'s a joke');
+    return this;
   };
 
   // a fallback for old browers
@@ -356,13 +469,14 @@
     var defaults = utils.merge(config)
       , klass = defaults.editor.getAttribute('class');
 
-    klass = klass ? klass.replace(/\bpen\b/g, '') + ' pen-textarea ' + defaults.class : 'pen pen-textarea';
+    klass = klass ? klass.replace(/\bpen\b/g, '') + ' pen-textarea ' + defaults.className : 'pen pen-textarea';
     defaults.editor.setAttribute('class', klass);
     defaults.editor.innerHTML = defaults.textarea;
     return defaults.editor;
   };
 
   // make it accessible
-  this.Pen = doc.getSelection ? Pen : FakePen;
+  window.Pen = document.getSelection ? Pen : FakePen;
 
-}(document));
+});
+
